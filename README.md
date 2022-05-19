@@ -235,3 +235,202 @@ function Header() {
 
 }
 ```
+
+<br>
+<br>
+<br>
+<br>
+
+### 220519
+
+<br>
+본격적으로 영화 API를 활용한 Home을 제작했다.
+<br>
+<br>
+https://developers.themoviedb.org/3/movies/get-now-playing 👈 TheMovieDB API 주소
+<br>
+<br>
+api.ts 파일을 만들어 따로 API를 관리하여 준다.
+<br>
+
+```
+
+// 오픈 API 소스라 딱히 암호화 할 필요는 없다.
+const API_KEY = "32ed9f0c14142254ed7a8d82aaeef5ae";
+
+// 기본 URL 주소를 만들었다.
+const BASE_PATH = "https://api.themoviedb.org/3";
+
+// fetch를 사용하여 API를 JSON으로 가져온다.
+export function getMovies() {
+  return fetch(`${BASE_PATH}/movie/now_playing?api_key=${API_KEY}`).then(
+    (response) => response.json()
+  );
+}
+```
+
+<br>
+<br>
+다음 useQuery를 사용하여 data를 가져온다.
+<br>
+useQuery를 사용하기 전 index.tsx 파일에 QueryClient와 QueryClientProvider를 사용한다.
+
+```
+
+const client = new QueryClient();
+
+ReactDOM.render(
+  <React.StrictMode>
+    <RecoilRoot>
+      <QueryClientProvider client={client}>
+        <ThemeProvider theme={theme}>
+          <GlobalStyle />
+          <App />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </RecoilRoot>
+  </React.StrictMode>,
+  document.getElementById("root")
+);
+
+```
+
+<br>
+<br>
+그리고 Home.tsx 파일에 useQuery를 사용하여 json파일을 확인한다.
+
+```
+
+import { useQuery } from "react-query";
+import { getMovies } from "../api";
+
+function Home() {
+
+  // console.log를 사용하여 data(jsonObject)와 isLoading을 확인한다.
+  const { data, isLoading } = useQuery(["movies", "nowPlaying"], getMovies);
+  console.log(data, isLoading);
+  return (
+    <div style={{ backgroundColor: "whitesmoke", height: "200vh" }}>home</div>
+  );
+}
+export default Home;
+
+```
+
+<br>
+<br>
+json파일을 확인했다면 API에서 필요한 요소들을 가져갈 차례이다.
+<br>
+먼저 api.ts 파일에 API의 타입을 정해준다.
+<br>
+
+```
+// result의 요소들의 타입을 정함
+interface IMovie {
+  id: number;
+  backdrop_path: string;
+  poster_path: string;
+  title: string;
+  overview: string;
+}
+
+// api의 타입을 정함
+export interface IGetMoviesResult {
+  dates: {
+    maximum: string;
+    minimum: string;
+  };
+  page: number;
+  results: IMovie[];
+  total_pages: number;
+  total_results: number;
+}
+```
+
+<br>
+<br>
+위와 같이 타입을 정했다면 사용할 차례다.
+
+```
+function Home() {
+  const { data, isLoading } = useQuery<IGetMoviesResult>(
+    ["movies", "nowPlaying"],
+    getMovies
+  );
+  console.log(data);
+  return (
+    <Wrapper>
+    // isLoading이 false일 때 Title과 Overview를 나타낸다.
+      {isLoading ? (
+        <Loader>Loading...</Loader>
+      ) : (
+        // <></> (fragment)를 활용한다.
+        <>
+        // data.result의 첫 번째 요소 title과 overview를 가져온다.
+            <Title>{data?.results[0].title}</Title>
+            <Overview>{data?.results[0].overview}</Overview>
+          </Banner>
+        </>
+      )}
+    </Wrapper>
+  );
+}
+
+```
+
+<br>
+<br>
+fragment는 처음 알았는데 검색해보니 부모가 없는 최소화로 경량화된 문서 객체라고 한다.
+<br>
+의미없는 div를 사용하지 않기 위해서 쓴다고 한다.
+<br>
+<br>
+이렇게 title과 overview를 가져오는데 성공하였고 다음으론 이미지를 가져올 차례이다.
+<br>
+이미지는 utils.ts파일을 만들어 관리하였다.
+
+```
+// id와 format은 string인데 format은 undefined일 수 있기 때문에 ?를 붙인다.
+export function makeImagePath(id: string, format?: string) {
+  // 기본 URL을 적고 format이 true일 경우 format을 아닐 시 original을 반환한다.
+  return `https://image.tmdb.org/t/p/${format ? format : "original"}/${id}`;
+}
+```
+
+<br>
+<br>
+마지막으로 Home.tsx 파일에 이미지를 넣어주면 된다.
+
+```
+// bgPhoto의 타입을 string으로 해준다.
+const Banner = styled.div<{ bgPhoto: string }>`
+
+...
+
+  // linear-gradient로 그라데이션 효과를 주고 url에 props.bgPhoto를 넣어주어 이미지를 불러온다.
+  background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 1)),
+    url(${(props) => props.bgPhoto});
+  background-size: cover;
+`;
+
+function Home() {
+
+...
+
+  return (
+    <Wrapper>
+      {isLoading ? (
+        <Loader>Loading...</Loader>
+      ) : (
+        <>
+
+        //makeImagePath를 가져오고 data.result의 첫번째 backdrop_path를 가져온다.
+        // 또한 data가 정의되지 않을 수도 있다는 에러가 나오는데 fallback 만들어주기 위해 || ""을 사용한다.
+          <Banner bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}>
+          </Banner>
+        </>
+      )}
+    </Wrapper>
+  );
+}
+```
