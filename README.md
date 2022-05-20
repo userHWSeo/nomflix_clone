@@ -434,3 +434,141 @@ function Home() {
   );
 }
 ```
+
+<br>
+<br>
+<br>
+<br>
+
+### 220519
+
+<br>
+추천 영화를 슬라이더로 볼 수 있도록 구현했다.
+<br>
+<br>
+
+```
+function Home() {
+
+...
+
+  // Row에 index를 넣어 넘어가는 효과를 준다.
+  const [index, setIndex] = useState(0);
+
+  // leaving을 만들어
+  const [leaving, setLeaving] = useState(false);
+
+  // toggleLeaving으로 setLeaving을 true에서 false로 false에서 true로 변환 시킨다.
+  // 그래야지 클릭한 후에 다시 클릭을 할 수 있다.
+  const toggleLeaving = () => setLeaving((prev) => !prev);
+
+  // incraseIndex는 index를 증가시키기 위해 만들었다.
+  const incraseIndex = () => {
+    if (data) {
+      if (leaving) return;
+      toggleLeaving();
+      const totalMovies = data.results.length - 1;
+
+      // 전체 영화 수에 offset(6개)를 나누어 maxIndex를 만들었다.
+      const maxIndex = Math.floor(totalMovies / offset) - 1;
+
+      // 만일 maxIndex일 경우 prev는 0으로 돌아가고 아니면 하나 씩 넘어간다
+      setIndex((prev) => (prev === maxIndex ? 0 : prev + 1));
+    }
+  };
+  return (
+    <Wrapper>
+      {isLoading ? (
+        <Loader>Loading...</Loader>
+      ) : (
+        <>
+          <Banner
+          // Banner을 클릭하면 Index가 증가함
+            onClick={incraseIndex}
+            bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}
+          >
+            <Title>{data?.results[0].title}</Title>
+            <Overview>{data?.results[0].overview}</Overview>
+          </Banner>
+          <Slider>
+            <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
+              <Row
+                variants={rowVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={{ type: "tween", duration: 1 }}
+                key={index}
+              >
+                {data?.results
+                  // slice(1)은 배경으로 사용된 영화를 제외하기 위해
+                  .slice(1)
+                  // 6개씩 쪼개어 슬라이드를 만들기 위해 아래와 같이 식을 사용함.
+                  .slice(offset * index, offset * index + offset)
+                  .map((movie) => (
+                    <Box
+                      key={movie.id}
+                      bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
+                    />
+                  ))}
+              </Row>
+            </AnimatePresence>
+          </Slider>
+        </>
+      )}
+    </Wrapper>
+  );
+}
+```
+
+<br>
+<br>
+그 다음으로 이미지를 배경으로 넣으면 된다.
+<br>
+배경은 util.ts 파일에 만들어 놓은 makeImagePath를 가져와 사용한다.
+
+```
+
+const Box = styled(motion.div)<{ bgPhoto: string }>`
+  background-color: white;
+
+  // background-image로 props 마다 각각의 배경을 준다.
+  background-image: url(${(props) => props.bgPhoto});
+  background-size: cover;
+  background-position: center center;
+  height: 200px;
+  font-size: 66px;
+`;
+
+
+function Home() {
+
+...
+
+          <Slider>
+            <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
+              <Row
+                variants={rowVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={{ type: "tween", duration: 1 }}
+                key={index}
+              >
+                {data?.results
+                  .slice(1)
+                  .slice(offset * index, offset * index + offset)
+                  .map((movie) => (
+                    <Box
+                      key={movie.id}
+                      // makeImagePath를 가져와 사용한다. 크기는 width500
+                      bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
+                    />
+                  ))}
+              </Row>
+            </AnimatePresence>
+          </Slider>
+
+...
+
+```
