@@ -440,7 +440,7 @@ function Home() {
 <br>
 <br>
 
-### 220519
+### 220522
 
 <br>
 추천 영화를 슬라이더로 볼 수 있도록 구현했다.
@@ -570,5 +570,104 @@ function Home() {
           </Slider>
 
 ...
+
+```
+
+<br>
+<br>
+<br>
+<br>
+
+### 220523
+
+<br>
+API로 가져온 영화 포스터들을 hover 시 영화의 scale 확대와 title(info)을 나타내도록 만들었다.
+<br>
+슬라이더의 양 끝 영화 포스터가 scale이 커질 때 잘려나오게 되어
+<br>
+first-child와 last-child의 transform-origin를 center left/right를 주었다.
+<br>
+그리고 info는 투명한 상태로 있다가 hover 시 opacity: 1로 주어 나타냈다.
+
+```
+
+const Box = styled(motion.div)<{ bgPhoto: string }>`
+  background-color: white;
+  background-image: url(${(props) => props.bgPhoto});
+  background-size: cover;
+  background-position: center center;
+  height: 200px;
+  font-size: 66px;
+
+  // scale 시 슬리이더 양 끝 영화 포스터가 잘리지 않도록 함
+  &:first-child {
+    transform-origin: center left;
+  }
+  &:last-child {
+    transform-origin: center right;
+  }
+`;
+
+// Info 라는 div를 만들어 hover 시 title을 나타내도록 함
+const Info = styled(motion.div)`
+  padding: 20px;
+  background-color: ${(props) => props.theme.black.lighter};
+  opacity: 0;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  h4 {
+    text-align: center;
+    font-size: 18px;
+  }
+`;
+
+// hover 시 scale을 늘려 애니메이션 효과를 주었음
+const BoxVariants = {
+  normal: {
+    scale: 1,
+  },
+  hover: {
+    scale: 1.3,
+    transition: { delay: 0.2, duration: 0.1, type: "tween" },
+    y: -80,
+  },
+};
+
+// hover 시 투명 상태의 info를 나타내도록 함
+const infoVariants = {
+  hover: {
+    opacity: 1,
+    transition: {
+      delay: 0.2,
+      duaration: 0.1,
+      type: "tween",
+    },
+  },
+};
+
+function Home() {
+
+...
+
+                    <Box
+                      key={movie.id}
+                      whileHover="hover"
+                      initial="normal"
+                      variants={BoxVariants}
+                      transition={{ type: "tween" }}
+                      bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
+                    >
+
+                    // Info에 movie.title을 넣음
+                      <Info variants={infoVariants}>
+                        <h4>{movie.title}</h4>
+                      </Info>
+                    </Box>
+                  ))}
+              </Row>
+            </AnimatePresence>
+
+ ...
 
 ```
