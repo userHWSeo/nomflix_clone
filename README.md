@@ -671,3 +671,119 @@ function Home() {
  ...
 
 ```
+
+<br>
+<br>
+<br>
+<br>
+
+### 220524
+
+<br>
+이젠 슬라이더에 있는 영화들을 클릭 시 확대가 되며 해당 영화의 자세한 설명을 나타내도록 한다.
+<br>
+제일 먼저 useNavigate를 사용하여 각 영화의 ID를 활용한 URI를 이동시켜야한다.
+<br>
+useNavigate는 Link와 비슷하게 페이지를 이동시켜주는 역활을 하는 훅인데
+<br>
+Link와 다른 점은 함수 호출을 통해 페이지를 이동하기 때문에 특정 조건이 충족 해야한다. 
+<br>
+Box를 클릭 시 해당 ID로 navigate를 이동시켜줬다.
+
+```
+ const navigate = useNavigate();
+ const onBoxClicked = (movieId: number) => {
+    navigate(`/movies/${movieId}`);
+  };
+
+  <Box
+   onClick={() => onBoxClicked(movie.id)}
+ />
+```
+
+<br>
+<br>
+그 다음으론 useMatch 훅을 사용하여 현재 URI가 괄호 안과 같다면 true 아니면 false를 반환해준다.
+<br>
+useMatch를 사용하다 아래와 같은 에러가 발생하게 된다.
+
+```
+Property 'movieId' does not exist on type 'Params<"id">'
+```
+
+<br>
+movieId에 타입을 정해주지 않아서 나타난거 같다.
+<br>
+다행이 강의 댓글에 같은 오류를 겪으신 분이 계셔서 참고하였다.
+
+```
+const moviePathMatch: PathMatch<string> | null = useMatch(`/movies/:id`);
+
+...
+
+<AnimatePresence>
+  {moviePathMatch ? (
+    <>
+      <Overlay
+        onClick={onOverlayClick}
+        exit={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+       />
+      <BigMovie
+        style={{ top: scrollY.get() + 100 }}
+        layoutId={moviePathMatch.params.movieId}
+      />
+    </>
+  ) : null}
+</AnimatePresence>
+
+```
+
+<br>
+<br>
+하나 놓친게 있다면 App.tsx에서 페이지를 이동시켜줘야하는데 Home을 기반으로 이동을 시켜야한다.
+<br>
+그러나 우리는 페이지 이동이 아닌 URI만 변경하고 싶은데
+<br>
+이때 / 다음에 *을 붙이면 Home 컴포넌트로 보내게 된다.
+
+```
+// App.tsx
+
+function App() {
+  return (
+    <Router>
+      <Header />
+      <Routes>
+      // 아래와 같이 Home 컴포넌트 path에 *을 붙인다.
+        <Route path="/*" element={<Home />} />
+        <Route path="/moives/:id" element={<Home />} />
+        <Route path="/tv" element={<Tv />} />
+        <Route path="/search" element={<Search />} />
+      </Routes>
+    </Router>
+  );
+}
+```
+
+<br>
+<br>
+다음으론 해당 영화의 상세 페이지를 만들어야하는데 간단한 폼만 만들었다.
+<br>
+일단 BigMovie라는 상세 페이지를 가볍게 스타일링했고
+<br>
+useViewportScroll를 사용해서 스크롤 Y값을 얻고 그 Y값에 맞춰서 100px 밑으로 가도록 하여 상세 페이지 위치를 정하려한다.
+<br>
+이와 같이 하는 이유는 스크롤을 아래로 내렸을 때 상세 페이지가 중앙에 위치하고 싶어서 이다.
+<br>
+
+```
+
+const { scrollY } = useViewportScroll();
+
+ <BigMovie
+  // scrollY에 100px을 더하여 준다.
+   style={{ top: scrollY.get() + 100 }}
+   layoutId={moviePathMatch.params.movieId}
+ />
+```
