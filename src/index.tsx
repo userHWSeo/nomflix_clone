@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import ReactDOM from "react-dom/client";
 import { RecoilRoot } from "recoil";
 import { ThemeProvider } from "styled-components";
 import App from "./App";
@@ -75,7 +75,9 @@ a {
 
 const client = new QueryClient();
 
-ReactDOM.render(
+const rootNode: any = document.getElementById("root");
+
+ReactDOM.createRoot(rootNode).render(
   <React.StrictMode>
     <RecoilRoot>
       <QueryClientProvider client={client}>
@@ -85,6 +87,5 @@ ReactDOM.render(
         </ThemeProvider>
       </QueryClientProvider>
     </RecoilRoot>
-  </React.StrictMode>,
-  document.getElementById("root")
+  </React.StrictMode>
 );
